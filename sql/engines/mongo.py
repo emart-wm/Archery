@@ -7,6 +7,7 @@ import json
 import subprocess
 import simplejson as json
 import datetime
+import tempfile
 from bson.son import SON
 from bson import json_util
 from pymongo.errors import OperationFailure
@@ -258,14 +259,29 @@ class MongoEngine(EngineBase):
         if self.user and self.password and self.port and self.host:
             msg = ""
             auth_db = self.instance.db_name or 'admin'
+            sql_len = len(sql)
+            is_load = False  # 默认不使用load方法执行mongodb sql语句
             try:
-                if not sql.startswith('var host='): #在master节点执行的情况
+                if not sql.startswith('var host=') and sql_len > 4000:  # 在master节点执行的情况，如果sql长度大于4000,就采取load js的方法
+                    # 因为用mongo load方法执行js脚本，所以需要重新改写一下sql，以便回显js执行结果
+                    sql = 'var result = ' + sql + '\nprintjson(result);'
+                    # 因为要知道具体的临时文件位置，所以用了NamedTemporaryFile模块
+                    fp = tempfile.NamedTemporaryFile(suffix=".js", prefix="mongo_", dir='/tmp/', delete=True)
+                    fp.write(sql.encode('utf-8'))
+                    fp.seek(0)  # 把文件指针指向开始，这样写的sql内容才能落到磁盘文件上
+                    cmd = "{mongo} --quiet -u {uname} -p '{password}' {host}:{port}/{auth_db} <<\\EOF\ndb=db.getSiblingDB(\"{db_name}\");{slave_ok}load('{tempfile_}')\nEOF".format(
+                        mongo=mongo, uname=self.user, password=self.password, host=self.host, port=self.port,
+                        db_name=db_name, sql=sql, auth_db=auth_db, slave_ok=slave_ok, tempfile_=fp.name)
+                    is_load = True  # 标记使用了load方法，用来在finally里面判断是否需要强制删除临时文件
+                elif not sql.startswith(
+                        'var host=') and sql_len < 4000:  # 在master节点执行的情况， 如果sql长度小于4000,就直接用mongo shell执行，减少磁盘交换，节省性能
                     cmd = "{mongo} --quiet -u {uname} -p '{password}' {host}:{port}/{auth_db} <<\\EOF\ndb=db.getSiblingDB(\"{db_name}\");{slave_ok}printjson({sql})\nEOF".format(
-                        mongo=mongo, uname=self.user, password=self.password, host=self.host, port=self.port, db_name=db_name, sql=sql, auth_db=auth_db, slave_ok=slave_ok)
+                        mongo=mongo, uname=self.user, password=self.password, host=self.host, port=self.port,
+                        db_name=db_name, sql=sql, auth_db=auth_db, slave_ok=slave_ok)
                 else:
                     cmd = "{mongo} --quiet -u {user} -p '{password}' {host}:{port}/{auth_db} <<\\EOF\nrs.slaveOk();{sql}\nEOF".format(
-                        mongo=mongo, user=self.user, password=self.password, host=self.host, port=self.port, db_name=db_name, sql=sql, auth_db=auth_db)
-                logger.debug(cmd)
+                        mongo=mongo, user=self.user, password=self.password, host=self.host, port=self.port,
+                        db_name=db_name, sql=sql, auth_db=auth_db)
                 p = subprocess.Popen(cmd, shell=True,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
@@ -281,11 +297,13 @@ class MongoEngine(EngineBase):
                         # 第一行可能是WARNING语句，因此跳过
                         continue
                     _re_msg.append(_line)
-                
-                msg = '\n'.join(_re_msg)
 
+                msg = '\n'.join(_re_msg)
             except Exception as e:
                 logger.warning(f"mongo语句执行报错，语句：{sql}，{e}错误信息{traceback.format_exc()}")
+            finally:
+                if is_load:
+                    fp.close()
         return msg
 
     def get_master(self):
@@ -430,7 +448,6 @@ class MongoEngine(EngineBase):
                             alert = ""
                             if is_in:
                                 check_result.error = "文档已经存在"
-                                check_result.error_count += 1
                                 result = ReviewResult(id=line, errlevel=2,
                                                       stagestatus='文档已经存在',
                                                       errormessage='文档已经存在！',
@@ -441,10 +458,9 @@ class MongoEngine(EngineBase):
                         else:
                             # method = sql_str.split('.')[2]
                             # methodStr = method.split('(')[0].strip()
-                            methodStr = sql_str.split('(')[0].split('.')[-1].strip()    # 最后一个.和括号(之间的字符串作为方法
+                            methodStr = sql_str.split('(')[0].split('.')[-1].strip()  # 最后一个.和括号(之间的字符串作为方法
                         if methodStr in is_exist_premise_method and not is_in:
                             check_result.error = "文档不存在"
-                            check_result.error_count += 1
                             result = ReviewResult(id=line, errlevel=2,
                                                   stagestatus='文档不存在',
                                                   errormessage=f'文档不存在，不能进行{methodStr}操作！',
@@ -492,7 +508,6 @@ class MongoEngine(EngineBase):
                                                       sql=check_sql,
                                                       execute_time=0)
                         else:
-                            check_result.error_count += 1
                             result = ReviewResult(id=line, errlevel=2,
                                                   stagestatus='驳回不支持语句',
                                                   errormessage='仅支持DML和DDL语句，如需查询请使用数据库查询功能！',
@@ -500,7 +515,6 @@ class MongoEngine(EngineBase):
 
                 else:
                     check_result.error = "语法错误"
-                    check_result.error_count += 1
                     result = ReviewResult(id=line, errlevel=2,
                                           stagestatus='语法错误',
                                           errormessage='请检查语句的正确性或（）{} },{是否正确匹配！',
@@ -511,6 +525,12 @@ class MongoEngine(EngineBase):
         check_result.column_list = ['Result']  # 审核结果的列名
         check_result.checked = True
         check_result.warning = self.warning
+        # 统计警告和错误数量
+        for r in check_result.rows:
+            if r.errlevel == 1:
+                check_result.warning_count += 1
+            if r.errlevel == 2:
+                check_result.error_count += 1
         return check_result
 
     def get_connection(self, db_name=None):
@@ -702,7 +722,7 @@ class MongoEngine(EngineBase):
 
         sql = sql.strip()
         if sql.startswith("explain"):
-            sql = sql[7:]+".explain()"
+            sql = sql[7:] + ".explain()"
             sql = re.sub("[;\s]*.explain\(\)$", ".explain()", sql).strip()
         result = {'msg': '', 'bad_query': False, 'filtered_sql': sql, 'has_star': False}
         pattern = re.compile(
@@ -828,7 +848,7 @@ class MongoEngine(EngineBase):
         return result_set
 
     def parse_tuple(self, cursor, db_name, tb_name, projection=None):
-        '''前端bootstrap-table显示，需要转化mongo查询结果为tuple((),())的格式'''
+        """前端bootstrap-table显示，需要转化mongo查询结果为tuple((),())的格式"""
         columns = []
         rows = []
         row = []
@@ -877,3 +897,77 @@ class MongoEngine(EngineBase):
                 if key not in cols:
                     cols.append(key)
         return cols
+
+    def current_op(self, command_type):
+        """
+        获取当前连接信息
+        
+        command_type:
+        Full    包含活跃与不活跃的连接，包含内部的连接，即全部的连接状态 
+        All     包含活跃与不活跃的连接，不包含内部的连接
+        Active  包含活跃
+        Inner   内部连接
+        """
+        print(command_type)
+        result_set = ResultSet(full_sql='db.aggregate([{"$currentOp": {"allUsers":true, "idleConnections":true}}])')
+        try:
+            conn = self.get_connection()
+            processlists = []
+            if not command_type:
+                command_type = 'Active'
+            if command_type in ['Full', 'All', 'Inner']:
+                idle_connections = True
+            else:
+                idle_connections = False
+
+            # conn.admin.current_op() 这个方法已经被pymongo废除，但mongodb3.6+才支持aggregate
+            with conn.admin.aggregate(
+                    [{'$currentOp': {'allUsers': True, 'idleConnections': idle_connections}}]) as cursor:
+                for operation in cursor:
+                    # 对sharding集群的特殊处理
+                    if 'client' not in operation and \
+                            operation.get('clientMetadata', {}).get('mongos', {}).get('client', {}):
+                        operation['client'] = operation['clientMetadata']['mongos']['client']
+
+                    # client_s 只是处理的mongos，并不是实际客户端
+                    # client 在sharding获取不到？
+                    if command_type in ['Full']:
+                        processlists.append(operation)
+                    elif command_type in ['All', 'Active']:
+                        if 'clientMetadata' in operation:
+                            processlists.append(operation)
+                    elif command_type in ['Inner']:
+                        if not 'clientMetadata' in operation:
+                            processlists.append(operation)
+
+            result_set.rows = processlists
+        except Exception as e:
+            logger.warning(f'mongodb获取连接信息错误，错误信息{traceback.format_exc()}')
+            result_set.error = str(e)
+
+        return result_set
+
+    def get_kill_command(self, opids):
+        """由传入的opid列表生成kill字符串"""
+        conn = self.get_connection()
+        active_opid = []
+        with conn.admin.aggregate([{'$currentOp': {'allUsers': True, 'idleConnections': False}}]) as cursor:
+            for operation in cursor:
+                if 'opid' in operation and operation['opid'] in opids:
+                    active_opid.append(operation['opid'])
+
+        kill_command = ''
+        for opid in active_opid:
+            if isinstance(opid, int):
+                kill_command = kill_command + 'db.killOp({});'.format(opid)
+            else:
+                kill_command = kill_command + 'db.killOp("{}");'.format(opid)
+
+        return kill_command
+
+    def kill_op(self, opids):
+        """kill"""
+        conn = self.get_connection()
+        db = conn.admin
+        for opid in opids:
+            conn.admin.command({'killOp': 1, 'op': opid})

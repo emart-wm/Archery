@@ -9,7 +9,7 @@ from django.test import TestCase
 
 from common.config import SysConfig
 from sql.engines import EngineBase
-from sql.engines.goinception import GoInceptionEngine, _repair_json_str
+from sql.engines.goinception import GoInceptionEngine
 from sql.engines.models import ResultSet, ReviewSet, ReviewResult
 from sql.engines.mssql import MssqlEngine
 from sql.engines.mysql import MysqlEngine
@@ -18,6 +18,7 @@ from sql.engines.pgsql import PgSQLEngine
 from sql.engines.oracle import OracleEngine
 from sql.engines.mongo import MongoEngine
 from sql.engines.clickhouse import ClickHouseEngine
+from sql.engines.odps import ODPSEngine
 from sql.models import Instance, SqlWorkflow, SqlWorkflowContent
 
 User = get_user_model()
@@ -399,7 +400,7 @@ class TestMysql(TestCase):
                                errormessage='None',
                                sql=sql,
                                affected_rows=0,
-                               execute_time=0, )
+                               execute_time='', )
         row = ReviewResult(id=1, errlevel=2,
                            stagestatus='驳回不支持语句',
                            errormessage='仅支持DML和DDL语句，查询语句请使用SQL查询功能！',
@@ -422,7 +423,7 @@ class TestMysql(TestCase):
                                errormessage='None',
                                sql=sql,
                                affected_rows=0,
-                               execute_time=0, )
+                               execute_time='', )
         row = ReviewResult(id=1, errlevel=2,
                            stagestatus='驳回高危SQL',
                            errormessage='禁止提交匹配' + '^|update' + '条件的语句！',
@@ -900,188 +901,6 @@ class TestModel(TestCase):
             review_set1.rows += [i]
         brand_new_review_set = ReviewSet()
         self.assertEqual(brand_new_review_set.rows, [])
-
-
-class TestInception(TestCase):
-    def setUp(self):
-        self.ins = Instance.objects.create(instance_name='some_ins', type='slave', db_type='mysql', host='some_host',
-                                           port=3306, user='ins_user', password='some_str')
-        self.ins_inc = Instance.objects.create(instance_name='some_ins_inc', type='slave', db_type='goinception',
-                                               host='some_host', port=6669)
-        self.wf = SqlWorkflow.objects.create(
-            workflow_name='some_name',
-            group_id=1,
-            group_name='g1',
-            engineer_display='',
-            audit_auth_groups='some_group',
-            create_time=datetime.now() - timedelta(days=1),
-            status='workflow_finish',
-            is_backup=True,
-            instance=self.ins,
-            db_name='some_db',
-            syntax_type=1
-        )
-        SqlWorkflowContent.objects.create(workflow=self.wf)
-
-    def tearDown(self):
-        self.ins.delete()
-        self.ins_inc.delete()
-        SqlWorkflow.objects.all().delete()
-        SqlWorkflowContent.objects.all().delete()
-
-    @patch('MySQLdb.connect')
-    def test_get_connection(self, _connect):
-        new_engine = GoInceptionEngine()
-        new_engine.get_connection()
-        _connect.assert_called_once()
-
-    @patch('MySQLdb.connect')
-    def test_get_backup_connection(self, _connect):
-        new_engine = GoInceptionEngine()
-        new_engine.get_backup_connection()
-        _connect.assert_called_once()
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_execute_check_normal_sql(self, _query):
-        sql = 'update user set id=100'
-        row = [1, 'CHECKED', 0, 'Audit completed', 'None', 'use archery', 0, "'0_0_0'", 'None', '0', '']
-        _query.return_value = ResultSet(full_sql=sql, rows=[row])
-        new_engine = GoInceptionEngine()
-        check_result = new_engine.execute_check(instance=self.ins, db_name=0, sql=sql)
-        self.assertIsInstance(check_result, ReviewSet)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_execute_exception(self, _query):
-        sql = 'update user set id=100'
-        row = [1, 'CHECKED', 1, 'Execute failed', 'None', 'use archery', 0, "'0_0_0'", 'None', '0', '']
-        column_list = ['ID', 'stage', 'errlevel', 'stagestatus', 'errormessage', 'SQL', 'Affected_rows', 'sequence',
-                       'backup_dbname', 'execute_time', 'sqlsha1']
-        _query.return_value = ResultSet(full_sql=sql, rows=[row], column_list=column_list)
-        new_engine = GoInceptionEngine()
-        execute_result = new_engine.execute(workflow=self.wf)
-        self.assertIsInstance(execute_result, ReviewSet)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_execute_finish(self, _query):
-        sql = 'update user set id=100'
-        row = [1, 'CHECKED', 0, 'Execute Successfully', 'None', 'use archery', 0, "'0_0_0'", 'None', '0', '']
-        column_list = ['ID', 'stage', 'errlevel', 'stagestatus', 'errormessage', 'SQL', 'Affected_rows', 'sequence',
-                       'backup_dbname', 'execute_time', 'sqlsha1']
-        _query.return_value = ResultSet(full_sql=sql, rows=[row], column_list=column_list)
-        new_engine = GoInceptionEngine()
-        execute_result = new_engine.execute(workflow=self.wf)
-        self.assertIsInstance(execute_result, ReviewSet)
-
-    @patch('MySQLdb.connect.cursor.execute')
-    @patch('MySQLdb.connect.cursor')
-    @patch('MySQLdb.connect')
-    def test_query(self, _conn, _cursor, _execute):
-        _conn.return_value.cursor.return_value.fetchall.return_value = [(1,)]
-        new_engine = GoInceptionEngine()
-        query_result = new_engine.query(db_name=0, sql='select 1', limit_num=100)
-        self.assertIsInstance(query_result, ResultSet)
-
-    @patch('MySQLdb.connect.cursor.execute')
-    @patch('MySQLdb.connect.cursor')
-    @patch('MySQLdb.connect')
-    def test_query_not_limit(self, _conn, _cursor, _execute):
-        _conn.return_value.cursor.return_value.fetchall.return_value = [(1,)]
-        new_engine = GoInceptionEngine(instance=self.ins)
-        query_result = new_engine.query(db_name=0, sql='select 1', limit_num=0)
-        self.assertIsInstance(query_result, ResultSet)
-
-    # @patch('sql.engines.goinception.GoInceptionEngine.query')
-    # def test_query_print(self, _query):
-    #     sql = 'update user set id=100'
-    #     row = {"text":"update user set id=100","TableRefs":{"text":"","TableRefs":{"text":"","resultFields":null,"Left":{"text":"","Source":{"text":"","resultFields":null,"Schema":{"O":"","L":""},"Name":{"O":"user","L":"user"},"DBInfo":null,"TableInfo":null,"IndexHints":null,"PartitionNames":null},"AsName":{"O":"","L":""}},"Right":null,"Tp":0,"On":null,"Using":null,"NaturalJoin":false,"StraightJoin":false}},"List":[{"text":"","Column":{"text":"","Schema":{"O":"","L":""},"Table":{"O":"","L":""},"Name":{"O":"id","L":"id"}},"Expr":{"text":"","k":1,"collation":0,"decimal":0,"length":0,"i":100,"b":null,"x":null,"Type":{"Tp":8,"Flag":128,"Flen":3,"Decimal":0,"Charset":"binary","Collate":"binary","Elems":null},"flag":0,"projectionOffset":-1}}],"Where":null,"Order":null,"Limit":null,"Priority":0,"IgnoreErr":false,"MultipleTable":false,"TableHints":null}
-    #     column_list = ['ID', 'statement', 'errlevel', 'query_tree', 'errmsg']
-    #     _query.return_value = ResultSet(full_sql=sql, rows=[row], column_list=column_list)
-    #     new_engine = GoInceptionEngine()
-    #     print_result = new_engine.query_print(self.ins, db_name=None, sql=sql)
-    #     self.assertDictEqual(print_result, json.loads(_repair_json_str(row[3])))
-
-    @patch('MySQLdb.connect')
-    def test_get_rollback_list(self, _connect):
-        self.wf.sqlworkflowcontent.execute_result = """[{
-            "id": 1,
-            "stage": "RERUN",
-            "errlevel": 0,
-            "stagestatus": "Execute Successfully",
-            "errormessage": "None",
-            "sql": "use archer_test",
-            "affected_rows": 0,
-            "sequence": "'1554135032_13038_0'",
-            "backup_dbname": "None",
-            "execute_time": "0.000",
-            "sqlsha1": "",
-            "actual_affected_rows": 0
-        }, {
-            "id": 2,
-            "stage": "EXECUTED",
-            "errlevel": 0,
-            "stagestatus": "Execute Successfully Backup successfully",
-            "errormessage": "None",
-            "sql": "insert into tt1 (user_name)values('A'),('B'),('C')",
-            "affected_rows": 3,
-            "sequence": "'1554135032_13038_1'",
-            "backup_dbname": "mysql_3306_archer_test",
-            "execute_time": "0.000",
-            "sqlsha1": "",
-            "actual_affected_rows": 3
-        }]"""
-        self.wf.sqlworkflowcontent.save()
-        new_engine = GoInceptionEngine()
-        new_engine.get_rollback(self.wf)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_osc_get(self, _query):
-        new_engine = GoInceptionEngine()
-        command = 'get'
-        sqlsha1 = 'xxxxx'
-        sql = f"inception get osc_percent '{sqlsha1}';"
-        _query.return_value = ResultSet(full_sql=sql, rows=[], column_list=[])
-        new_engine.osc_control(sqlsha1=sqlsha1, command=command)
-        _query.assert_called_once_with(sql=sql)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_osc_kill(self, _query):
-        new_engine = GoInceptionEngine()
-        command = 'kill'
-        sqlsha1 = 'xxxxx'
-        sql = f"inception kill osc '{sqlsha1}';"
-        _query.return_value = ResultSet(full_sql=sql, rows=[], column_list=[])
-        new_engine.osc_control(sqlsha1=sqlsha1, command=command)
-        _query.assert_called_once_with(sql=sql)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_osc_not_support(self, _query):
-        new_engine = GoInceptionEngine()
-        command = 'pause'
-        sqlsha1 = 'xxxxx'
-        sql = f"inception pause osc '{sqlsha1}';"
-        _query.return_value = ResultSet(full_sql=sql, rows=[], column_list=[])
-        new_engine.osc_control(sqlsha1=sqlsha1, command=command)
-        _query.assert_called_once_with(sql=sql)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_get_variables(self, _query):
-        new_engine = GoInceptionEngine(instance=self.ins_inc)
-        new_engine.get_variables()
-        sql = f"inception get variables;"
-        _query.assert_called_once_with(sql=sql)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_get_variables_filter(self, _query):
-        new_engine = GoInceptionEngine(instance=self.ins_inc)
-        new_engine.get_variables(variables=['inception_osc_on'])
-        sql = f"inception get variables like 'inception_osc_on';"
-        _query.assert_called_once_with(sql=sql)
-
-    @patch('sql.engines.goinception.GoInceptionEngine.query')
-    def test_set_variable(self, _query):
-        new_engine = GoInceptionEngine(instance=self.ins)
-        new_engine.set_variable('inception_osc_on', 'on')
-        _query.assert_called_once_with(sql="inception set inception_osc_on=on;")
 
 
 class TestGoInception(TestCase):
@@ -1648,6 +1467,30 @@ class MongoTest(TestCase):
         cols = self.engine.fill_query_columns(cursor, columns=columns)
         self.assertEqual(cols, ["_id", "title", "tags", "likes", "text", "author"])
 
+    @patch('sql.engines.mongo.MongoEngine.current_op')
+    def test_current_op(self, mock_current_op):
+        mock_current_op.return_value = ResultSet()
+        command_types = ['Full', 'All', 'Inner', 'Active']
+        for command_type in command_types:
+            result_set = self.engine.current_op(command_type)
+            self.assertIsInstance(result_set, ResultSet)
+
+    @patch('sql.engines.mongo.MongoEngine.get_kill_command')
+    def test_get_kill_command(self, mock_kill_command):
+        """TODO mock后这个测试无意义，后续CI可增加真实的mongo验证"""
+        mock_kill_command.return_value = 'db.killOp(111);db.killOp(222);'
+        kill_command1 = self.engine.get_kill_command([111, 222])
+        self.assertEqual(kill_command1, 'db.killOp(111);db.killOp(222);')
+        mock_kill_command.return_value = 'db.killOp("shards: 111");db.killOp("shards: 111");'
+        kill_command2 = self.engine.get_kill_command(['shards: 111', 'shards: 222'])
+        self.assertEqual(kill_command2, 'db.killOp("shards: 111");db.killOp("shards: 111");')
+
+    @patch('sql.engines.mongo.MongoEngine.kill_op')
+    def test_kill_op(self, mock_kill_op):
+        self.engine.kill_op([111, 222])
+        self.engine.kill_op(['shards: 111', 'shards: 222'])
+        self.assertEqual("", "")
+
 
 class TestClickHouse(TestCase):
 
@@ -1882,3 +1725,95 @@ class TestClickHouse(TestCase):
         execute_result = new_engine.execute_workflow(workflow=wf)
         self.assertIsInstance(execute_result, ReviewSet)
         self.assertEqual(execute_result.rows[0].__dict__.keys(), row.__dict__.keys())
+
+
+class ODPSTest(TestCase):
+    def setUp(self) -> None:
+        self.ins = Instance.objects.create(instance_name='some_ins', type='slave', db_type='odps',
+                                           host='some_host', port=9200, user='ins_user', db_name='some_db')
+        self.engine = ODPSEngine(instance=self.ins)
+
+    def tearDown(self) -> None:
+        self.ins.delete()
+
+    @patch('sql.engines.odps.ODPSEngine.get_connection')
+    def test_get_connection(self, mock_odps):
+        _ = self.engine.get_connection()
+        mock_odps.assert_called_once()
+
+    @patch('sql.engines.odps.ODPSEngine.get_connection')
+    def test_query(self, mock_get_connection):
+        test_sql = """select 123"""
+        self.assertIsInstance(self.engine.query('some_db', test_sql), ResultSet)
+
+    def test_query_check(self):
+        test_sql = """select 123; -- this is comment
+                      select 456;"""
+
+        result_sql = "select 123;"
+
+        check_result = self.engine.query_check(sql=test_sql)
+
+        self.assertIsInstance(check_result, dict)
+        self.assertEqual(False, check_result.get("bad_query"))
+        self.assertEqual(result_sql, check_result.get("filtered_sql"))
+
+    def test_query_check_error(self):
+        test_sql = """drop table table_a"""
+
+        check_result = self.engine.query_check(sql=test_sql)
+
+        self.assertIsInstance(check_result, dict)
+        self.assertEqual(True, check_result.get("bad_query"))
+
+    @patch('sql.engines.odps.ODPSEngine.get_connection')
+    def test_get_all_databases(self, mock_get_connection):
+        mock_conn = Mock()
+        mock_conn.exist_project.return_value = True
+        mock_conn.project = 'some_db'
+
+        mock_get_connection.return_value = mock_conn
+
+        result = self.engine.get_all_databases()
+
+        self.assertIsInstance(result, ResultSet)
+        self.assertEqual(result.rows, ['some_db'])
+
+    @patch('sql.engines.odps.ODPSEngine.get_connection')
+    def test_get_all_tables(self, mock_get_connection):
+        # 下面是查表示例返回结果
+        class T:
+            def __init__(self, name):
+                self.name = name
+
+        mock_conn = Mock()
+        mock_conn.list_tables.return_value = [T('u'), T('v'), T('w')]
+        mock_get_connection.return_value = mock_conn
+
+        table_list = self.engine.get_all_tables('some_db')
+
+        self.assertEqual(table_list.rows, ['u', 'v', 'w'])
+
+    @patch('sql.engines.odps.ODPSEngine.get_all_columns_by_tb')
+    def test_describe_table(self, mock_get_all_columns_by_tb):
+        self.engine.describe_table('some_db', 'some_table')
+        mock_get_all_columns_by_tb.assert_called_once()
+
+    @patch('sql.engines.odps.ODPSEngine.get_connection')
+    def test_get_all_columns_by_tb(self, mock_get_connection):
+        mock_conn = Mock()
+
+        mock_cols = Mock()
+
+        mock_col = Mock()
+        mock_col.name, mock_col.type, mock_col.comment = 'XiaoMing', 'string', 'name'
+
+        mock_cols.schema.columns = [mock_col]
+        mock_conn.get_table.return_value = mock_cols
+        mock_get_connection.return_value = mock_conn
+
+        result = self.engine.get_all_columns_by_tb('some_db', 'some_table')
+        mock_get_connection.assert_called_once()
+        mock_conn.get_table.assert_called_once()
+        self.assertEqual(result.rows, [['XiaoMing', 'string', 'name']])
+        self.assertEqual(result.column_list, ['COLUMN_NAME', 'COLUMN_TYPE', 'COLUMN_COMMENT'])

@@ -2,9 +2,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from mirage import fields
-
 from django.utils.translation import gettext as _
 from mirage.crypto import Crypto
+
 
 class ResourceGroup(models.Model):
     """
@@ -59,6 +59,29 @@ class Users(AbstractUser):
         db_table = 'sql_users'
         verbose_name = u'用户管理'
         verbose_name_plural = u'用户管理'
+
+
+class TwoFactorAuthConfig(models.Model):
+    """
+    2fa配置信息
+    """
+    auth_type_choice = (
+        ('totp', 'Google身份验证器'),
+    )
+
+    username = fields.EncryptedCharField(verbose_name='用户名', max_length=200)
+    auth_type = fields.EncryptedCharField(verbose_name='认证类型', max_length=128, choices=auth_type_choice)
+    secret_key = fields.EncryptedCharField(verbose_name='用户密钥', max_length=256, null=True)
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+
+    def __int__(self):
+        return self.username
+
+    class Meta:
+        managed = True
+        db_table = '2fa_config'
+        verbose_name = u'2FA配置'
+        verbose_name_plural = u'2FA配置'
 
 
 class InstanceTag(models.Model):
@@ -605,7 +628,7 @@ class Config(models.Model):
     """
     配置信息表
     """
-    item = models.CharField('配置项', max_length=200, primary_key=True)
+    item = models.CharField('配置项', max_length=100, unique=True)
     value = fields.EncryptedCharField(verbose_name='配置项值', max_length=500)
     description = models.CharField('描述', max_length=200, default='', blank=True)
 
@@ -705,6 +728,7 @@ class Permission(models.Model):
             ('menu_schemasync', '菜单 SchemaSync'),
             ('menu_system', '菜单 系统管理'),
             ('menu_document', '菜单 相关文档'),
+            ('menu_openapi', '菜单 OpenAPI'),
             ('sql_submit', '提交SQL上线工单'),
             ('sql_review', '审核SQL上线工单'),
             ('sql_execute_for_resource_group', '执行SQL上线工单(资源组粒度)'),
