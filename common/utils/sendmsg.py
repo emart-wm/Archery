@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-
 
-import re
 import email
 import smtplib
 import requests
 import logging
 import traceback
+import ssl
 from email import encoders
 from email.header import Header
 from email.utils import formataddr
@@ -49,6 +49,10 @@ class MsgSender(object):
             self.MAIL_REVIEW_SMTP_PORT = 465
         else:
             self.MAIL_REVIEW_SMTP_PORT = 25
+
+        if self.MAIL_REVIEW_SMTP_PORT == 587 and self.MAIL_REVIEW_SMTP_SERVER=="email-smtp.eu-west-1.amazonaws.com":
+            self.MAIL_REVIEW_FROM_ADDR = 'no-reply@ascendex.com'
+            ssl._create_default_https_context = ssl._create_unverified_context
 
     @staticmethod
     def _add_attachment(filename):
@@ -103,7 +107,7 @@ class MsgSender(object):
 
             # 消息内容:
             main_msg['Subject'] = Header(subject, "utf-8").encode()
-            main_msg['From'] = formataddr(["Archery 通知", self.MAIL_REVIEW_FROM_ADDR])
+            main_msg['From'] = formataddr(["SQL平台 通知<no-reply>", self.MAIL_REVIEW_FROM_ADDR])
             main_msg['To'] = ','.join(list(set(to)))
             main_msg['Cc'] = ', '.join(str(cc) for cc in list(set(list_cc)))
             main_msg['Date'] = email.utils.formatdate()
@@ -113,7 +117,15 @@ class MsgSender(object):
             else:
                 server = smtplib.SMTP(self.MAIL_REVIEW_SMTP_SERVER, self.MAIL_REVIEW_SMTP_PORT, timeout=3)
 
-                # 如果提供的密码为空，则不需要登录
+
+            server.connect(self.MAIL_REVIEW_SMTP_SERVER, self.MAIL_REVIEW_SMTP_PORT)
+            #if self.MAIL_REVIEW_SMTP_PORT==587 and self.MAIL_REVIEW_SMTP_SERVER=="email-smtp.us-east-1.amazonaws.com":
+            if self.MAIL_REVIEW_SMTP_PORT == 587:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+
+            # 如果提供的密码为空，则不需要登录
             if self.MAIL_REVIEW_FROM_PASSWORD:
                 server.login(self.MAIL_REVIEW_FROM_ADDR, self.MAIL_REVIEW_FROM_PASSWORD)
             server.sendmail(self.MAIL_REVIEW_FROM_ADDR, to + list_cc, main_msg.as_string())
@@ -212,6 +224,26 @@ class MsgSender(object):
             logger.debug(f'企业微信机器人推送成功\n通知对象：机器人')
         else:
             logger.error(f'企业微信机器人推送失败\n请求连接:{send_url}\n请求参数:{data}\n请求响应:{r_json}')
+
+    def send_slack_webhook(self, slack_webhook, msg):
+
+        send_url = slack_webhook
+        data = {
+            # "msgtype": "text",
+            "text": msg,
+# msg.replace('工单地址：', '工单地址：[请点击链接](').replace('\n工单详情预览：', ')\n工单详情预览：'),
+        }
+        r_json = None
+        try:
+
+          res = requests.post(url=send_url, json=data, timeout=5)
+          r_json = res.json()
+#        if r_json['errcode'] == 0:
+          logger.debug(f'Slack推送成功\n通知对象：机器人')
+        except Exception as e:
+#else:
+          logger.error(f'Slack推送失败\n请求连接:{send_url}\n请求参数:{data}\n请求响应:{r_json}\nInfo:{str(e)}')
+
 
     @staticmethod
     def send_feishu_webhook(url, title, content):

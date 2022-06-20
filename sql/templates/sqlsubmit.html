@@ -5,7 +5,7 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    SQL上线
+                    Submit DML/DDL
                 </div>
                 <div class="panel-body">
                     <form id="form-submitsql" action="/autoreview/" method="post" class="form-horizontal" role="form">
@@ -16,7 +16,7 @@
                         </div>
                         <div style="display: none" class="col-md-8 column">
                             <textarea id="sql_content" name="sql_content" class="form-control" data-name="SQL内容"
-                                      data-placeholder="SQL内容不能为空！"
+                                      data-placeholder="SQL content cannot be empty!"
                                       placeholder="请在此提交SQL，请以分号结尾。" rows=20
                                       required></textarea>
                         </div>
@@ -27,21 +27,21 @@
                             <div class="form-group">
                                 <input id="workflow_name" type="text" autocomplete="off" name="workflow_name"
                                        class="form-control"
-                                       data-name="上线单名称" data-placeholder="请输入上线单名称！"
-                                       placeholder="请输入上线单名称，如:XX项目会员功能建表"
+                                       data-name="上线单名称" data-placeholder=" Please enter the workflow name!"
+                                       placeholder="[Required] WorkFlow Name, eg: XX项目会员功能建表"
                                        required>
                             </div>
                             <div class="form-group">
                                 <input id="demand_url" type="text" autocomplete="off" name="demand_url" class="form-control"
                                        data-name="需求链接" data-placeholder="请提供需求链接，记录工单需求信息！"
-                                       placeholder="请输入需求链接">
+                                       placeholder="[Optional] Requirement Link, eg: Clickup/JIRA URL">
                             </div>
                             <div class="form-group">
                                 <select id="group_name" name="group_name"
                                         class="selectpicker show-tick form-control bs-select-hidden"
-                                        data-name="组" data-placeholder="请选择组！"
-                                        title="请选择组"
-                                        data-live-search="true" data-live-search-placeholder="搜索您所在的组" required>
+                                        data-name="组" data-placeholder="[Required] Please Choose Resource Group"
+                                        title="[Required] Resource Group"
+                                        data-live-search="true" data-live-search-placeholder="Search Resource Group" required>
                                     {% for group in group_list %}
                                         <option value="{{ group.group_name }}">{{ group.group_name }}</option>
                                     {% endfor %}
@@ -50,9 +50,9 @@
                             <div class="form-group">
                                 <select id="instance_name" name="instance_name"
                                         class="selectpicker show-tick form-control bs-select-hidden"
-                                        data-name="实例" data-placeholder="请选择实例！"
-                                        title="请选择实例"
-                                        data-live-search="true" data-live-search-placeholder="搜索您所在组的实例" required>
+                                        data-name="实例" data-placeholder="[Required] Please Choose Instance"
+                                        title="[Required] Instance Name"
+                                        data-live-search="true" data-live-search-placeholder="Search Your Instances" required>
                                     <optgroup id="optgroup-mysql" label="MySQL"></optgroup>
                                     <optgroup id="optgroup-mssql" label="MsSQL"></optgroup>
                                     <optgroup id="optgroup-redis" label="Redis"></optgroup>
@@ -66,11 +66,11 @@
                             <div class="form-group">
                                 <select id="db_name" name="db_name"
                                         class="form-control selectpicker show-tick bs-select-hidden"
-                                        data-name="数据库" data-placeholder="请选择数据库！"
-                                        data-live-search="true"  data-live-search-placeholder="搜索要提交的数据库"
-                                        title="请选择数据库"
+                                        data-name="数据库" data-placeholder="[Required] Please Choose DB (Schema)"
+                                        data-live-search="true"  data-live-search-placeholder="Search Database"
+                                        title="[Required] DB Name"
                                         required>
-                                    <option value="is-empty" disabled="" selected="selected">请选择数据库:</option>
+                                    <option value="is-empty" disabled="" selected="selected">Selected DB:</option>
                                 </select>
                             </div>
                             {% if enable_backup_switch %}
@@ -78,10 +78,10 @@
                                     <select id="is_backup" name="is_backup"
                                             class="selectpicker show-tick form-control bs-select-hidden"
                                             data-name="是否选择备份"
-                                            title="请选择是否需要备份"
-                                            data-placeholder="请选择是否要备份" required>
-                                        <option value=True selected="selected">备份SQL</option>
-                                        <option value=False>不备份SQL</option>
+                                            title="[Required] Backup SQL or Not, For Recovery"
+                                            data-placeholder="Please select Backup or Not, For Recovery or FlashBack"  required>
+                                        <option value=True selected="selected">Backup SQL</option>
+                                        <option value=False>Not Backup SQL</option>
                                     </select>
                                 </div>
                             {% endif %}
@@ -91,7 +91,7 @@
                                 <input type="hidden" id="run_date_end" name="run_date_end">
                                 <div class='input-group date'>
                                     <input type="text" id="run_date_range" readonly
-                                           value="请选择可执行时间范围"
+                                           value="[Optional] Executable Time Range, For Timed execution"
                                            style="background-color: #fff;color: #999 "
                                            class="form-control "/>
                                     <span class="input-group-addon"><span
@@ -117,13 +117,13 @@
                             <input type="hidden" id="workflow_auditors" name="workflow_auditors" data-name="审批流程"
                                    data-placeholder="请配置审批流程！" required>
                             <div id="div-workflow_auditors" class="form-group" style="display: none">
-                                <p class="bg-primary">&nbsp&nbsp&nbsp审批流程：<b id="workflow_auditors_display"></b></p>
+                                <p class="bg-primary">&nbsp&nbsp&nbsp Approval Process：<b id="workflow_auditors_display"></b></p>
                             </div>
                             <!--button-->
                             <div class="form-group">
-                                <input id="btn-format" type="button" class="btn btn-info" value="美化"/>
-                                <input type="button" id="btn-autoreview" class="btn btn-danger" value="SQL检测"/>
-                                <input id="btn-submitsql" type="button" class="btn btn-success" value="SQL提交"/>
+                                <input id="btn-format" type="button" class="btn btn-info" value="Beautify SQL"/>
+                                <input type="button" id="btn-autoreview" class="btn btn-danger" value="AutoReview SQL"/>
+                                <input id="btn-submitsql" type="button" class="btn btn-success" value="Submit SQL"/>
                             </div>
                         </div>
                     </form>
@@ -133,7 +133,7 @@
         <div class="col-md-12 column">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    检测结果
+                    AutoReview Result
                 </div>
 
                 <div class="panel-body">
@@ -480,7 +480,7 @@
                                     field: 'id',
                                     sortable: true
                                 }, {
-                                    title: 'SQL语句',
+                                    title: 'SQL',
                                     field: 'sql',
                                     formatter: function (value, row, index) {
                                         var sql = value.replace(/\n/g, '<br>').replace(/\s/g, '&nbsp;');
@@ -491,11 +491,11 @@
                                         }
                                     }
                                 }, {
-                                    title: '扫描/影响行数',
+                                    title: 'Assessed Searching Rows',
                                     field: 'affected_rows',
                                     sortable: true
                                 }, {
-                                    title: '审核状态',
+                                    title: 'Autoreview Status',
                                     field: 'errlevel',
                                     sortable: true,
                                     formatter: function (value, row, index) {
@@ -508,7 +508,7 @@
                                         }
                                     }
                                 }, {
-                                    title: '审核信息',
+                                    title: 'AutoReview Message',
                                     field: 'errormessage',
                                     formatter: function (value, row, index) {
                                         if (value === null) {

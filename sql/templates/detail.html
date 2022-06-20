@@ -9,10 +9,10 @@
         </h4>
         <!--只允许发起人提交其他实例-->
         {% if user.username == workflow_detail.engineer %}
-            <a type='button' id="btnSubmitOtherCluster" class='btn btn-warning' href="/submitotherinstance/">上线其他实例</a>
+            <a type='button' id="btnSubmitOtherCluster" class='btn btn-warning' href="/submitotherinstance/">Submit Other Instance</a>
         {% endif %}
         {% if is_can_review or is_can_execute or is_can_rollback or user.is_superuser %}
-            <a type='button' id="btnViewSql" class='btn btn-default' onclick="loading(this)" href="/editsql/">查看提交信息</a>
+            <a type='button' id="btnViewSql" class='btn btn-default' onclick="loading(this)" href="/editsql/">View SQL</a>
         {% endif %}
     </div>
     <input type="hidden" id="sqlMaxRowNumber" value="{{ rows|length }}">
@@ -23,40 +23,40 @@
         <thead>
         <tr>
             <th>
-                发起人
+                Applicant
             </th>
             <th>
-                审批流程
+                Approval Process
             </th>
             <th>
-                当前审批
+                Current Approval
             </th>
             <th>
-                目标实例
+                Instance Name
             </th>
             <th>
-                数据库
+                DB Name
             </th>
             <th>
-                发起时间
+                Apply Time
             </th>
             <th>
-                可执行时间范围
+                Executable Time Range
             </th>
             <th>
-                结束时间
+                Finished Time
             </th>
             <th>
-                备份
+                Is Backup
             </th>
             <th>
-                当前状态
+                Status
             </th>
             <th>
-                组
+                Resource Group
             </th>
             <th>
-                类型
+                Syntax Type
             </th>
         </tr>
         </thead>
@@ -84,7 +84,7 @@
                 {% if workflow_detail.run_date_start and workflow_detail.run_date_end %}
                     {{ workflow_detail.run_date_start }} / {{ workflow_detail.run_date_end }}
                 {% else %}
-                    无限制
+                    UnLimited
                 {% endif %}
             </td>
             <td>
@@ -120,10 +120,10 @@
     <!-- Nav tabs -->
     <ul id="nav-tabs" class="nav nav-tabs" role="tablist">
         <li id="detail_tab" class="active">
-            <a href="#detail" role="tab" data-toggle="tab">工单详情</a>
+            <a href="#detail" role="tab" data-toggle="tab">WorkFlow Detail</a>
         </li>
         <li id="logs_tab">
-            <a href="#logs" role="tab" data-toggle="tab">工单日志</a>
+            <a href="#logs" role="tab" data-toggle="tab">Approval Log</a>
         </li>
     </ul>
     <!-- Tab panes -->
@@ -132,7 +132,7 @@
         <div id="detail" role="tabpanel" class="tab-pane fade in active table-responsive">
             <!-- 自定义操作按钮-->
             <div id="detail-toolbar" class="btn-group right">
-                <button id="expandAllRows" class="btn btn-default navbar-btn" type="button">展开全部</button>
+                <button id="expandAllRows" class="btn btn-default navbar-btn" type="button">Expand All</button>
             </div>
             <table id="tb-detail" data-toggle="table" class="table table-condensed"
                    style="table-layout:inherit;word-break:break-word;overflow:hidden;text-overflow:ellipsis;"></table>
@@ -143,7 +143,7 @@
                     <thead>
                     <tr>
                         <th>
-                            操作信息
+                            Last Approval Info
                         </th>
                     </tr>
                     </thead>
@@ -170,7 +170,7 @@
     <!--审核备注输入框-->
     {% if is_can_review or is_can_cancel %}
         <textarea id="remark" name="remark" class="form-control" data-name="审核备注"
-                  placeholder="请填写审核备注/终止原因" rows=3></textarea>
+                  placeholder=" Please fill in the review comments / termination reasons 请填写审核备注/终止原因" rows=3></textarea>
         <br>
     {% endif %}
     <!--审核人修改可执行时间按钮-->
@@ -180,7 +180,7 @@
             <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
             <input type="hidden" id="audit_remark" name="audit_remark" value="">
             <input type="button" class="btn btn-info" data-toggle="modal" data-target="#Executabletime"
-                   value="可执行时间变更"/>
+                   value="Change Executable Time"/>
         </form>
     {% endif %}
     <!--审核通过按钮-->
@@ -189,7 +189,7 @@
             {% csrf_token %}
             <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
             <input type="hidden" id="audit_remark" name="audit_remark" value="">
-            <input type="button" id="btnPass" class="btn btn-success" value="审核通过"/>
+            <input type="button" id="btnPass" class="btn btn-success" value="Approved"/>
         </form>
     {% endif %}
     <!--立即执行按钮-->
@@ -199,7 +199,7 @@
             <input type="hidden" name="mode" value="auto">
             <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
             <input type="button" id="btnExecuteOnly" class="btn btn-danger"
-                   value="立即执行"/>
+                   value="Execute SQL Now"/>
         </form>
         {% if manual %}
             <form id="from-execute-manual" action="/execute/" method="post" style="display:inline-block;">
@@ -207,16 +207,16 @@
                 <input type="hidden" name="mode" value="manual">
                 <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
                 <input type="button" id="btnExecuteOnly-manual" class="btn btn-warning"
-                       value="已手动完成"/>
+                       value="Execute SQL Manually"/>
             </form>
         {% endif %}
     {% endif %}
     <!--定时执行按钮-->
     {% if is_can_timingtask %}
         {% if workflow_detail.status == 'workflow_review_pass' %}
-            <input type="button" class="btn btn-info" data-toggle="modal" data-target="#cronComfirm" value="定时执行"/>
+            <input type="button" class="btn btn-info" data-toggle="modal" data-target="#cronComfirm" value="Timed Execution"/>
         {% elif workflow_detail.status == 'workflow_timingtask' %}
-            <input type="button" class="btn btn-info" data-toggle="modal" data-target="#cronComfirm" value="执行时间变更"/>
+            <input type="button" class="btn btn-info" data-toggle="modal" data-target="#cronComfirm" value="Modify Executable Time"/>
         {% endif %}
     {% endif %}
     <!--终止执行按钮-->
@@ -225,7 +225,7 @@
             {% csrf_token %}
             <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
             <input type="hidden" id="cancel_remark" name="cancel_remark" value="">
-            <input type="button" id="btnCancel" class="btn btn-default" value="终止流程"/>
+            <input type="button" id="btnCancel" class="btn btn-default" value="Reject And Terminate"/>
         </form>
     {% endif %}
     <!--查看回滚按钮-->
@@ -235,14 +235,14 @@
                 {% csrf_token %}
                 <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
                 <input type="submit" id="btnRollback" onclick="loading(this)" class="btn btn-default"
-                       value="查看回滚SQL"/>
+                       value="View Rollback SQL"/>
             </form>
             <form action="/rollback/" method="get" style="display:inline-block;">
                 {% csrf_token %}
                 <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
                 <input type="hidden" name="download" value="true">
                 <input type="submit" id="btnRollback" onclick="loading(this)" class="btn btn-info"
-                       value="下载回滚SQL"/>
+                       value="Download Rollback SQL"/>
             </form>
         {% endif %}
     {% endif %}
@@ -252,7 +252,7 @@
             <!--只允许发起人修改工单-->
             {% csrf_token %}
             <a type='button' id="btnEditSql" onclick="loading(this)" class='btn btn-default'
-               href="/editsql/">重新修改</a>
+               href="/editsql/">Edit SQL</a>
         {% endif %}
     {% endif %}
 
@@ -264,7 +264,7 @@
                     <div class="modal-header ">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                                 aria-hidden="true">×</span></button>
-                        <h4 class="modal-title text-danger">定时执行SQL</h4>
+                        <h4 class="modal-title text-danger">Timed Execution</h4>
                     </div>
                     {% csrf_token %}
                     <div class="modal-body">
@@ -272,16 +272,16 @@
                             <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
                             <div class='input-group date' id='datetimepicker'>
                                 <input id="run_date" name="run_date" type='text' autocomplete="off" class="form-control"
-                                       placeholder="请选择执行时间"/>
+                                       placeholder="Select Executable Time"/>
                                 <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-info" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
 
                         <input type="hidden" name="workflow_id" value="{{ workflow_detail.id }}">
-                        <input type="button" id="btnAddsqlcronjob" class="btn btn-danger" value="确认提交"/>
+                        <input type="button" id="btnAddsqlcronjob" class="btn btn-danger" value="Submit"/>
                     </div>
 
                 </div>
@@ -412,14 +412,14 @@
         // 表格展开折叠全部行
         $("#expandAllRows").click(function () {
             $(this).trigger("blur");
-            if ($(this).text() === '展开全部') {
+            if ($(this).text() === 'Expand All') {
                 $('#tb-detail').bootstrapTable('hideColumn', 'sql');
                 $('#tb-detail').bootstrapTable('expandAllRows');
-                $(this).text('折叠全部')
-            } else if ($(this).text() === '折叠全部') {
+                $(this).text('Collapse All')
+            } else if ($(this).text() === 'Collapse All') {
                 $('#tb-detail').bootstrapTable('showColumn', 'sql');
                 $('#tb-detail').bootstrapTable('collapseAllRows');
-                $(this).text('展开全部')
+                $(this).text('Expand All')
             }
         });
 
@@ -500,7 +500,7 @@
                 loading(this);
                 formCancel.submit();
             } else {
-                alert('请填写终止原因')
+                alert('Please fill in the reason for termination 请填写终止原因')
             }
         });
 
@@ -602,59 +602,58 @@
                     field: 'id',
                     sortable: true
                 }, {
-                    title: '完整SQL内容',
+                    title: 'Full SQL',
                     field: 'sql',
                     visible: false // 默认不显示
                 }, {
-                    title: 'SQL内容',
+                    title: 'SQL',
                     field: 'sql',
                     formatter: function (value, row, index) {
-                        var sql=row.sql;
-                        if (sql.length > 80) {
-                            return sql.substr(0, 80) + '...';
+                        if (value.length > 80) {
+                            return value.substr(0, 80) + '...';
                         } else {
-                            return sql
+                            return value
                         }
                     },
                     sortable: false
                 }, {
-                    title: '审核/执行状态',
+                    title: 'Autoreview Status',
                     field: 'errlevel',
                     formatter: function (value, row, index) {
-                        if (String(value) === '0') {
+                        if (value === 0) {
                             return 'pass'
-                        } else if (String(value) === '1') {
+                        } else if (value === 1) {
                             return 'warning'
-                        } else if (String(value) === '2') {
+                        } else if (value === 2) {
                             return 'error'
                         }
                     },
                     sortable: true
                 }, {
-                    title: '审核/执行信息',
+                    title: 'AutoReview/Execute Messages',
                     field: 'errormessage',
                     formatter: function (value, row, index) {
                         return value.replace(/\n/g, '<br>');
                     },
                     sortable: true
                 }, {
-                    title: '扫描/影响行数',
+                    title: 'Affected Rows',
                     field: 'affected_rows',
                     sortable: true
                 }, {
-                    title: '执行耗时',
+                    title: 'Execute Time(s)',
                     field: 'execute_time',
                     sortable: true
                 }, {
-                    title: '备份耗时',
+                    title: 'Backup Time(s)',
                     field: 'backup_time',
                     sortable: true
                 }, {
-                    title: '当前阶段',
+                    title: 'Stage Staus',
                     field: 'stagestatus',
                     sortable: true
                 }, {
-                    title: '操作',
+                    title: 'Operation',
                     field: 'sqlsha1',
                     formatter: function (value, row, index) {
                         let btn_percent = "<button class=\"btn btn-info btn-xs\" sqlsha1=\"" + row.sqlsha1 + "\" onclick=\"get_osc_percent(this)" + "\">查看进度</button>\n";
@@ -676,7 +675,9 @@
                 },
                 onLoadSuccess: function () {
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                }
             });
         }
 
@@ -732,7 +733,9 @@
                         }],
                         onLoadSuccess: function () {
                         },
-                        onLoadError: onLoadErrorCallback,
+                        onLoadError: function () {
+                            alert("数据加载失败！请检查接口返回信息和错误日志！");
+                        }
                     });
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -835,7 +838,9 @@
                     $("#osc-toolbar").show();
                     $('#osc_percent').modal('show');
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                }
             });
 
         }

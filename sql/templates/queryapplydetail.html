@@ -15,37 +15,37 @@
         <thead>
         <tr>
             <th>
-                申请人
+                User
             </th>
             <th>
-                审批流程
+                Approval Process
             </th>
             <th>
-                当前审批
+                Current Approval
             </th>
             <th>
-                实例
+                Instance Name
             </th>
             <th>
-                权限级别
+                Priv Level
             </th>
             <th>
-                数据库
+                DB Name
             </th>
             <th>
-                结果集
+                Limit Num
             </th>
             <th>
-                有效时间
+                Valid Date
             </th>
             <th>
-                申请时间
+                Apply Time
             </th>
             <th>
-                当前状态
+                Status
             </th>
             <th>
-                组
+                Resource Group
             </th>
         </tr>
         </thead>
@@ -99,9 +99,9 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             {% if workflow_detail.priv_type == 1 %}
-                数据库清单
+                DB List
             {% elif workflow_detail.priv_type == 2 %}
-                表清单
+                Table List
             {% endif %}
         </div>
         <div class="panel-body">
@@ -118,7 +118,7 @@
             <thead>
             <tr>
                 <th>
-                    操作信息
+                    Last Approval Info
                 </th>
             </tr>
             </thead>
@@ -141,7 +141,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="apply_id" value="{{ workflow_detail.apply_id }}">
                 <input type="hidden" id="audit_status" name="audit_status" value="1">
-                <input type="submit" id="btnPass" onclick="loading(this)" class="btn btn-success" value="审核通过"/>
+                <input type="submit" id="btnPass" onclick="loading(this)" class="btn btn-success" value="Approve Pass"/>
             </form>
 
             <form id="form-cancel" action="/query/privaudit/" method="post" style="display:inline-block;">
@@ -149,7 +149,7 @@
                 <input type="hidden" name="apply_id" value="{{ workflow_detail.apply_id }}">
                 <input type="hidden" id="audit_status" name="audit_status" value="2">
                 <input type="hidden" id="audit_remark" name="audit_remark" value="">
-                <input type="button" id="btnReject" class="btn btn-default" value="终止流程"/>
+                <input type="button" id="btnReject" class="btn btn-default" value="Reject"/>
             </form>
         {% endif %}
     {% endif %}

@@ -5,7 +5,7 @@
     <div id="toolbar" class="form-inline pull-left">
         <div class="form-group">
             <select id="navStatus" class="form-control selectpicker">
-                <option value="" selected="selected">状态</option>
+                <option value="" selected="selected">WorkFlow Status</option>
                 {% for status, status_display in status_list %}
                     <option value="{{ status }}">{{ status_display }}</option>
                 {% endfor %}
@@ -14,7 +14,7 @@
         <div class="form-group">
             <select id="instance_id" class="form-control selectpicker"
                     data-live-search="true">
-                <option value="" selected="selected">实例</option>
+                <option value="" selected="selected">DB Instance</option>
                 {% for ins in instance %}
                     <option value="{{ ins.id }}">{{ ins.instance_name }}</option>
                 {% endfor %}
@@ -23,7 +23,7 @@
         <div class="form-group">
             <select id="group_id" class="form-control selectpicker"
                     data-live-search="true">
-                <option value="" selected="selected">组</option>
+                <option value="" selected="selected">Resouce Group</option>
                 {% for rgp in resource_group %}
                     <option value="{{ rgp.group_id }}">{{ rgp.group_name }}</option>
                 {% endfor %}
@@ -40,7 +40,7 @@
             <button id="btn_add" type="button" class="btn btn-default"
                     onclick="window.location.href='/submitsql/'">
                 <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                提交SQL
+                Submit SQL
             </button>
         </div>
     </div>
@@ -56,7 +56,7 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                             aria-hidden="true">×</span></button>
-                    <h4 class="modal-title text-danger">工单日志</h4>
+                    <h4 class="modal-title text-danger">WorkFlow Logs List</h4>
                 </div>
                 <div class="modal-body">
                     <div class="table-responsive">
@@ -185,7 +185,7 @@
                         }
                     },
                 columns: [{
-                    title: '工单名称',
+                    title: 'WorkFlow Name',
                     field: 'workflow_name',
                     formatter: function (value, row, index) {
                         var span = document.createElement('span');
@@ -203,7 +203,7 @@
                     field: 'workflow_name',
                     visible: false // 默认不显示
                 }, {
-                    title: '类型',
+                    title: 'Syntax Type',
                     field: 'syntax_type',
                     formatter: function (value, row, index) {
                         if (String(value) === '0') {
@@ -215,16 +215,16 @@
                         }
                     }
                 }, {
-                    title: '发起人',
+                    title: 'Applicant',
                     field: 'engineer_display'
                 }, {
-                    title: '工单状态',
+                    title: 'Status',
                     field: 'status',
                     formatter: function (value, row, index) {
                         return sqlworkflowStatus_formatter(value)
                     }
                 }, {
-                    title: '备份',
+                    title: 'Is Backup',
                     field: 'is_backup',
                     visible: true, // 默认显示
                     formatter: function (value, row, index) {
@@ -235,27 +235,29 @@
                         }
                     }
                 }, {
-                    title: '发起时间',
+                    title: 'Apply Time',
                     field: 'create_time'
                 }, {
-                    title: '目标实例',
+                    title: 'Instance Name',
                     field: 'instance__instance_name'
                 }, {
-                    title: '数据库',
+                    title: 'DB Name',
                     field: 'db_name'
                 }, {
-                    title: '组',
+                    title: 'Resource Group',
                     field: 'group_name'
                 }, {
-                    title: '操作',
+                    title: 'Operation',
                     field: 'operation',
                     formatter: function (value, row, index) {
-                        return "<button class=\"btn btn-info btn-xs\" workflow_id=\"" + row.id + "\"\n" + "onclick=\"getLog(this)\" >操作日志\n" + "</button>"
+                        return "<button class=\"btn btn-info btn-xs\" workflow_id=\"" + row.id + "\"\n" + "onclick=\"getLog(this)\" >Operation Logs\n" + "</button>"
                     }
                 }],
                 onLoadSuccess: function () {
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                },
                 onSearch: function (e) {
                     //传搜索参数给服务器
                     queryParams(e)
@@ -323,7 +325,9 @@
                         }],
                         onLoadSuccess: function () {
                         },
-                        onLoadError: onLoadErrorCallback
+                        onLoadError: function () {
+                            alert("数据加载失败！请检查接口返回信息和错误日志！");
+                        }
                     });
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {

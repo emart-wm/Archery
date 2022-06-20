@@ -44,7 +44,7 @@ CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 USE_X_FORWARDED_HOST = True
 
 # 请求限制
-DATA_UPLOAD_MAX_MEMORY_SIZE = 15728640
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1572864000
 
 # Application definition
 INSTALLED_APPS = (
@@ -101,10 +101,12 @@ WSGI_APPLICATION = 'archery.wsgi.application'
 LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'Asia/Shanghai'
+#TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_TZ = False
+#USE_TZ = True
 
 # 时间格式化
 USE_L10N = False
@@ -149,17 +151,21 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # 关闭浏览器，则COOKIE失效
 # 该项目本身的mysql数据库地址
 DATABASES = {
     'default': {
-        **env.db(),
-        **{
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                'charset': 'utf8mb4'
-            },
-            'TEST': {
-                'NAME': 'test_archery',
-                'CHARSET': 'utf8mb4',
-            }
-        }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'archery',
+        'USER': 'archery_user',
+        'PASSWORD': 'L7K6VG5PMQe3Mh7vsnqI0u2So',
+        'HOST': 'rds-work-tools-db.chpxhi2zgmft.ap-northeast-1.rds.amazonaws.com',
+        'PORT': '3306',
+        'OPTIONS': {
+            #'init_command': "SET sql_mode='STRICT_TRANS_TABLE'",
+            'init_command': "SET group_concat_max_len=100000",
+            'charset': 'utf8mb4'
+        },
+        'TEST': {
+            'NAME': 'test_archery',
+            'CHARSET': 'utf8mb4',
+        },
     }
 }
 
@@ -168,7 +174,7 @@ Q_CLUSTER = {
     'name': 'archery',
     'workers': 4,
     'recycle': 500,
-    'timeout': 60,
+    'timeout': 1800,
     'compress': True,
     'cpu_affinity': 1,
     'save_limit': 0,
@@ -180,54 +186,22 @@ Q_CLUSTER = {
 
 # 缓存配置
 CACHES = {
-    "default": env.cache(),
-    "dingding": env.cache_url("DINGDING_CACHE_URL")
-}
-
-# https://docs.djangoproject.com/en/3.2/ref/settings/#std-setting-DEFAULT_AUTO_FIELD
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-
-# API Framework
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
-    # 鉴权
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-    # 权限
-    'DEFAULT_PERMISSION_CLASSES': ('sql_api.permissions.IsInUserWhitelist',),
-    # 限速（anon：未认证用户  user：认证用户）
-    'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ),
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '120/min',
-        'user': '600/min'
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "123456"
+        }
     },
-    # 过滤
-    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
-    # 分页
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 5,
-}
-
-# Swagger UI
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Archery API',
-    'DESCRIPTION': 'OpenAPI 3.0',
-    'VERSION': '1.0.0',
-}
-
-# API Authentication
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=4),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=3),
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    "dingding": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "123456"
+        }
+    }
 }
 
 # LDAP

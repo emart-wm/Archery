@@ -5,11 +5,11 @@
     <div id="toolbar" class="btn-group">
         <a type="button" class="btn btn-default" href="/queryuserprivileges/">
             <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
-            <span aria-hidden="true"></span>权限管理</a>
+            <span aria-hidden="true"></span>Query Permission List</a>
         <button id="btn_add" type="button" class="btn btn-default"
                 data-toggle="modal" data-target="#apply">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-            <span aria-hidden="true"></span>权限申请
+            <span aria-hidden="true"></span>Query Permission Apply
         </button>
     </div>
     <!-- 申请列表的表格-->
@@ -25,16 +25,16 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                             aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="myModalLabel">申请数据库查询权限</h4>
+                    <h4 class="modal-title" id="myModalLabel" >Apply for Database Query Permission</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <input type="text" autocomplete="off" class="form-control" id="title" placeholder="简单说明权限用途">
+                        <input type="text" autocomplete="off" class="form-control" id="title" placeholder="[Required]Brief description of purpose">
                     </div>
                     <div class="form-group">
                         <select id="group_name" name="group_name"
                                 class="selectpicker show-tick form-control bs-select-hidden"
-                                title="请选择组:"
+                                title="[Required]Resource Group:"
                                 data-live-search="true" required>
                             {% for group in group_list %}
                                 <option value="{{ group.group_name }}">{{ group.group_name }}</option>
@@ -44,7 +44,7 @@
                     <div class="form-group">
                         <select id="instance_name" name="instance_name"
                                 class="selectpicker show-tick form-control bs-select-hidden"
-                                title="请选择实例:"
+                                title="[Required]Instance:"
                                 data-live-search="true" required>
                             // TODO 使用models中的choices 渲染
                             <optgroup id="optgroup-mysql" label="MySQL"></optgroup>
@@ -60,19 +60,19 @@
                     </div>
                     <div class="form-group">
                         <select id="priv_type" name="db_name" data-live-search="true"
-                                title="权限级别:"
+                                title="[Required]Privilege Level:"
                                 class="form-control selectpicker show-tick bs-select-hidden">
                         </select>
                     </div>
                     <div id="db_name_div" class="form-group">
                         <select id="db_name" name="db_name" data-live-search="true"
-                                title="请选择数据库:"
+                                title="[Required]DB:"
                                 class="form-control selectpicker show-tick bs-select-hidden ">
                         </select>
                     </div>
                     <div id="db_name_multiple_div" class="form-group" style="display: none">
                         <select id="db_name_multiple" name="db_name" data-live-search="true" multiple="multiple"
-                                title="请选择数据库:" required
+                                title="[Required]DB List:(multiple)" required
                                 class="form-control selectpicker show-tick bs-select-hidden ">
                         </select>
                     </div>
@@ -81,38 +81,40 @@
                         <select id="table_name" name="table_name"
                                 class="form-control selectpicker show-tick bs-select-hidden" data-live-search="true"
                                 multiple='multiple' data-max-options="999"
-                                title="请选择表:" required>
+                                title="Select Table:" required>
                         </select>
                     </div>
                     <div class="form-group">
                         <select id="valid_date" name="valid_date"
-                                title="请选择授权时间:"
+                                title="[Required]Valid Date:"
                                 class="form-control selectpicker show-tick bs-select-hidden ">
-                            <option value="day">一天</option>
-                            <option value="week">一周</option>
-                            <option value="month">一月</option>
-                            <option value="year">长期(一年)</option>
+                            <option value="day">One Day</option>
+                            <option value="week">One Week</option>
+                            <option value="month">One Month</option>
+                            <option value="year">One Year(Longterm)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <input id="limit_num" list="limits" type="number"
                                class="form-control "
-                               placeholder="请选择查询限制行数:">
+                               placeholder="[Required]Select or Input Limit Number:">
                         <datalist id="limits">
                             <option value=100>100</option>
                             <option value=500>500</option>
                             <option value=1000>1000</option>
+                            <option value=5000>5000</option>
+                            <option value=10000>10000</option>
                         </datalist>
                     </div>
                     <!--审批流程-->
                     <div id="div-workflow_auditors" class="form-group" style="display: none">
-                        <p class="bg-primary">&nbsp&nbsp&nbsp审批流程：<b id="workflow_auditors"></b></p>
+                        <p class="bg-primary">&nbsp&nbsp&nbsp Approval Process：<b id="workflow_auditors"></b></p>
                     </div>
-                    <p class="text-info">提示：权限审核通过后即可进行在线查询，请耐心等待。</p>
+                    <p class="text-info">Tips: Online Query can be exectued After permission is approved. Please wait patiently. <Br/>提示：权限审核通过后即可进行在线查询，请耐心等待。</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-success" onclick="applyforprivileges()">提交申请</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="applyforprivileges()">Submit for Apply</button>
                 </div>
             </div>
         </div>
@@ -305,7 +307,7 @@
                     }
                 },
                 columns: [{
-                    title: '工单名称',
+                    title: 'Title',
                     field: 'title',
                     formatter: function (value, row, index) {
                         var span = document.createElement('span');
@@ -319,10 +321,10 @@
                         return span.outerHTML;
                     }
                 }, {
-                    title: '实例',
+                    title: 'Instance Name',
                     field: 'instance__instance_name'
                 }, {
-                    title: '数据库',
+                    title: 'DB List',
                     field: 'db_list',
                     formatter: function (value, row, index) {
                         if (value.length > 30) {
@@ -333,46 +335,48 @@
                         }
                     }
                 }, {
-                    title: '权限级别',
+                    title: 'Priv Level',
                     field: 'priv_type',
                     formatter: function (value, row, index) {
-                        if (String(value) === '1') {
+                        if (value === 1) {
                             return 'DATABASE';
                         } else {
                             return 'TABLE';
                         }
                     }
                 }, {
-                    title: '结果集',
+                    title: 'Limit Num',
                     field: 'limit_num'
                 }, {
-                    title: '有效时间',
+                    title: 'Valid Date',
                     field: 'valid_date'
                 }, {
-                    title: '工单状态',
+                    title: 'Status',
                     field: 'status',
                     formatter: function (value, row, index) {
                         return workflow_status_formatter(value)
                     }
                 }, {
-                    title: '申请人',
+                    title: 'User',
                     field: 'user_display'
                 }, {
-                    title: '申请时间',
+                    title: 'Apply Time',
                     field: 'create_time'
                 }, {
-                    title: '组',
+                    title: 'Resour Group',
                     field: 'group_name'
                 }, {
-                    title: '操作',
+                    title: 'Operation',
                     field: 'operation',
                     formatter: function (value, row, index) {
-                        return "<button class=\"btn btn-info btn-xs\" workflow_id=\"" + row.apply_id + "\"\n" + "onclick=\"getLog(this)\" >操作日志\n" + "</button>"
+                        return "<button class=\"btn btn-info btn-xs\" workflow_id=\"" + row.apply_id + "\"\n" + "onclick=\"getLog(this)\" >Operation Logs\n" + "</button>"
                     }
                 }],
                 onLoadSuccess: function () {
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                },
                 onSearch: function (e) {
                     //传搜索参数给服务器
                     queryParams(e)
@@ -654,7 +658,9 @@
                         }],
                         onLoadSuccess: function () {
                         },
-                        onLoadError: onLoadErrorCallback,
+                        onLoadError: function () {
+                            alert("数据加载失败！请检查接口返回信息和错误日志！");
+                        }
                     });
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {

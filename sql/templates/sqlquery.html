@@ -5,17 +5,17 @@
     <div id="query-log-toolbar" class="form-inline pull-left">
         <div class="form-group">
             <select id="filter-star" class="form-control selectpicker"
-                    title="全部">
-                <option value="" selected="selected">全部</option>
-                <option value="true">已收藏</option>
-                <option value="false">未收藏</option>
+                    title="All">
+                <option value="" selected="selected">All</option>
+                <option value="true">Collected</option>
+                <option value="false">Not Collected</option>
             </select>
         </div>
         <div class="form-group">
             <select id="filter-alias" class="form-control selectpicker"
                     data-live-search="true"
-                    title="全部">
-                <option value="" selected="selected">全部</option>
+                    title="All">
+                <option value="" selected="selected">All</option>
                 {% for sql in favorites %}
                     <option value={{ sql.id }}>{{ sql.alias }}</option>
                 {% endfor %}
@@ -29,7 +29,7 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                             aria-hidden="true">×</span></button>
-                    <h4 class="modal-title text-danger">收藏语句</h4>
+                    <h4 class="modal-title text-danger">Collected SQL</h4>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="query_log_id">
@@ -37,8 +37,8 @@
                            placeholder="请输入语句别名"/>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-info" data-dismiss="modal">取消</button>
-                    <button type="button" id="btn-star" class="btn btn-danger" onclick="star()">收藏</button>
+                    <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-star" class="btn btn-danger" onclick="star()">Collect</button>
                 </div>
             </div>
         </div>
@@ -47,11 +47,11 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading form-inline">
-                    SQL查询
+                    SQL Online Query
                     <select id="favorites" name="favorites"
                             class="form-control selectpicker"
-                            data-live-search="true" data-live-search-placeholder="搜索"
-                            title="常用查询"
+                            data-live-search="true" data-live-search-placeholder="Search"
+                            title=" Collected Query"
                             required>
                         {% for sql in favorites %}
                             <option value={{ sql.id }}>{{ sql.alias }}</option>
@@ -68,9 +68,9 @@
                             <div class="form-group">
                                 <select id="instance_name" name="instance_name"
                                         class="selectpicker show-tick form-control bs-select-hidden"
-                                        data-live-search="true" data-live-search-placeholder="搜索您所在组的实例"
-                                        title="请选择实例:"
-                                        data-placeholder="请选择实例:" required>
+                                        data-live-search="true" data-live-search-placeholder="Search Instance"
+                                        title="[Required] Instance:"
+                                        data-placeholder="[Required]Select One Instance:" required>
                                     <optgroup id="optgroup-mysql" label="MySQL"></optgroup>
                                     <optgroup id="optgroup-mssql" label="MsSQL"></optgroup>
                                     <optgroup id="optgroup-redis" label="Redis"></optgroup>
@@ -85,48 +85,52 @@
                             <div class="form-group">
                                 <select id="db_name" name="db_name"
                                         class="form-control selectpicker show-tick bs-select-hidden"
-                                        data-live-search="true" data-live-search-placeholder="搜索您要查询的数据库"
-                                        title="请选择数据库:"
-                                        data-placeholder="请选择数据库:" required>
+                                        data-live-search="true" data-live-search-placeholder="Search Database"
+                                        title="[Required] Database:"
+                                        data-placeholder="[Required]Select One Database:" required>
                                 </select>
                             </div>
                             <div id="div-schema_name" class="form-group" style="display: none">
                                 <select id="schema_name" name="schema_name"
                                         class="form-control selectpicker show-tick bs-select-hidden"
                                         data-live-search="true"
-                                        title="请选择模式:"
-                                        data-placeholder="请选择模式:" required>
+                                        title="[Optional] Schema:"
+                                        data-placeholder="[Optional]Select One Schema:" required>
                                 </select>
                             </div>
                             <div id="div-table_name" class="form-group">
                                 <select id="table_name" name="table_name"
                                         class="form-control selectpicker show-tick bs-select-hidden"
-                                        data-live-search="true" data-live-search-placeholder="搜索您要查询的表"
-                                        data-name="查看表结构"
-                                        title="查看表结构:"
-                                        data-placeholder="查看表结构:" required>
+                                        data-live-search="true" data-live-search-placeholder="Search Table"
+                                        data-name="View Table DDL"
+                                        title="[Optional] View Table DDL"
+                                        data-placeholder="[Optional]View Table DDL" required>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <select id="limit_num" name="limit_num"
                                         class="form-control selectpicker show-tick bs-select-hidden"
-                                        data-placeholder="返回行数:" required>
-                                    <option value="is-empty" disabled="">返回行数:</option>
+                                        data-placeholder="Limit Num" required>
+                                    <option value="is-empty" disabled="">Limit Num:</option>
                                     <option value=100 selected="selected">100</option>
                                     <option value=500>500</option>
                                     <option value=1000>1000</option>
-                                    <option value=0>max(最大限制行数)</option>
+                                    <option value=3000>3000</option>
+                                    <option value=5000>5000</option>
+                                    <option value=0>max(MaxLimitNum)</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <input id="btn-format" type="button" class="btn btn-info" value="美化"/>
-                                <input id="btn-explain" type="button" class="btn btn-warning" value="执行计划"/>
-                                <input id="btn-sqlquery" type="button" class="btn btn-success" value="SQL查询"/>
+                                <input id="btn-format" type="button" class="btn btn-info" value="Beautify SQL"/>
+                                <input id="btn-explain" type="button" class="btn btn-warning" value="Explain Plan"/>
+                                <input id="btn-sqlquery" type="button" class="btn btn-success" value="Execute Query"/>
                             </div>
                         </div>
                         <div class="text-info">
-                            <li>支持注释行，可选择指定语句执行，默认执行第一条;</li>
-                            <li>查询结果行数限制见权限管理，会选择查询涉及表的最小limit值</li>
+                           <!--  <li>支持注释行，可选择指定语句执行，默认执行第一条;</li> -->
+                            <li>Comment lines are supported. You can choose to specify statement execution. The first one will be executed by default; </li>
+                           <!-- <li>查询结果行数限制见<a href="/queryapplylist/">权限管理</a>，会选择查询涉及表的最小limit值</li> -->
+                            <li>See <a href="/queryapplylist/">Query Permission Management</a> for the limit of query result rows. The minimum limit value of the table involved in the query will be selected.</li>
                         </div>
                     </form>
                 </div>
@@ -135,7 +139,7 @@
         <div class="col-md-12 column">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    查询结果 <span style="color: red">
+                    Query Result<span style="color: red">
                         <small id="seconds_behind_master"></small>
                     </span>
                 </div>
@@ -143,7 +147,7 @@
                     <!-- Nav tabs -->
                     <ul id="nav-tabs" class="nav nav-tabs" role="tablist">
                         <li class="active" id="sqllog_tab">
-                            <a href="#sql_log_result" role="tab" data-toggle="tab">查询历史</a>
+                            <a href="#sql_log_result" role="tab" data-toggle="tab">Query History Logs</a>
                         </li>
                         <button class="btn btn-default btn-sm pull-right" onclick="tab_remove()">
                             <span class="glyphicon glyphicon-minus"></span>
@@ -334,32 +338,32 @@
                     return html.join('');
                 },
                 columns: [{
-                    title: '操作',
+                    title: 'Operation',
                     field: '',
                     formatter: function (value, row, index) {
                         if (row.favorite) {
-                            var btn_favorite = "<button type=\"button\" class=\"btn btn-xs\" data-toggle=\"tooltip\" title=\"取消收藏\" onclick=\"unstar(" + row.id + ")" + "\"><span class=\"fa fa-star\"></span></button>\n";
+                            var btn_favorite = "<button type=\"button\" class=\"btn btn-xs\" data-toggle=\"tooltip\" title=\"Cancel Collected\" onclick=\"unstar(" + row.id + ")" + "\"><span class=\"fa fa-star\"></span></button>\n";
                         } else {
                             var btn_favorite = "<button type=\"button\" class=\"btn btn-xs\" data-toggle=\"modal\" data-target=\"#favorite\" onclick=\"star(" + row.id + ")" + "\"><span class=\"fa fa-star-o\"></span></button>\n";
                         }
-                        let btn_re_query = "<button type=\"button\" class=\"btn btn-xs\"  data-toggle=\"tooltip\" title=\"一键查询\" onclick=\"re_query(" + row.id + ")" + "\"><span class=\"fa fa-search\"></span></button>";
+                        let btn_re_query = "<button type=\"button\" class=\"btn btn-xs\"  data-toggle=\"tooltip\" title=\"ReQuery\" onclick=\"re_query(" + row.id + ")" + "\"><span class=\"fa fa-search\"></span></button>";
                         return btn_favorite + btn_re_query
                     }
 
                 }, {
-                    title: '用户',
+                    title: 'User',
                     field: 'user_display'
                 }, {
-                    title: '实例',
+                    title: 'Instance Name',
                     field: 'instance_name'
                 }, {
-                    title: '数据库',
+                    title: 'DB Name',
                     field: 'db_name'
                 }, {
-                    title: '查询时间',
+                    title: 'Query Time',
                     field: 'create_time'
                 }, {
-                    title: '语句',
+                    title: 'SQL',
                     field: 'sqllog',
                     formatter: function (value, row, index) {
                         var _sql=row.sqllog
@@ -371,14 +375,14 @@
                         }
                     }
                 }, {
-                    title: '完整语句',
+                    title: 'Full SQL',
                     field: 'sqllog',
                     visible: false // 默认不显示
                 }, {
-                    title: '返回行数',
+                    title: 'Returned Rows',
                     field: 'effect_row'
                 }, {
-                    title: '耗时(秒)',
+                    title: 'Cost Time(s)',
                     field: 'cost_time'
                 }],
                 onLoadSuccess: function () {
@@ -386,7 +390,9 @@
                         re_query(query_log_id)
                     }
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                },
                 onSearch: function (e) {
                     //传搜索参数给服务器
                     queryParams(e)
@@ -545,7 +551,7 @@
             if (tab_title) {
                 href_a.innerHTML = tab_title; //链接显示文本（相当于标签标题）
             } else {
-                href_a.innerHTML = "执行结果" + (Number(tab_number) + 1); //链接显示文本（相当于标签标题）
+                href_a.innerHTML = "Query Result" + (Number(tab_number) + 1); //链接显示文本（相当于标签标题）
 
             }
             li.appendChild(href_a);//将a添加到li
@@ -560,13 +566,13 @@
             var div =
                 "<div id=\"sqlquery_result" + tab_number + "\" role=\"tabpanel\" class=\"tab-pane fade table-responsive\">\n" +
                 "    <div id=\"query_time" + tab_number + "\" class=\"navbar-text\" >\n" +
-                "        <small>查询时间 : <strong id=\"time" + tab_number + "\"> sec </strong></small>\n" +
+                "        <small>Query Time : <strong id=\"time" + tab_number + "\"> sec </strong></small>\n" +
                 "    </div>\n" +
                 "    <div id=\"mask_time" + tab_number + "\" class=\"navbar-text\" >\n" +
-                "        <small>脱敏时间 : <strong id=\"masking_time" + tab_number + "\"> sec </strong></small>\n" +
+                "        <small>Mask Time : <strong id=\"masking_time" + tab_number + "\"> sec </strong></small>\n" +
                 "    </div>\n" +
                 "    <table id=\"query_result" + tab_number + "\" data-toggle=\"table\" class=\"table table-condensed\"\n" +
-                "           style=\"table-layout:inherit;white-space:pre;overflow:hidden;text-overflow:ellipsis;\"></table>\n" +
+                "           style=\"table-layout:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\"></table>\n" +
                 "</div>\t";
             $("#tab-content").append(div);//div添加到div
 
@@ -624,7 +630,11 @@
 
         //先做表单验证，验证成功再成功提交查询请求
         $("#btn-sqlquery").click(function () {
-                dosqlquery();
+                if (sqlquery_validate()) {
+                    $('input[type=button]').addClass('disabled');
+                    $('input[type=button]').prop('disabled', true);
+                    sqlquery();
+                }
             }
         );
 
@@ -681,7 +691,7 @@
         }
 
         // 展示数据
-        function display_data(data, target='') {
+        function display_data(data) {
             var result = data.data;
             var query_str = target+'|'+result['full_sql'];
             //获取当前的标签页,如果当前不在执行结果页，则默认新增一个页面

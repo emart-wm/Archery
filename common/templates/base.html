@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>Archery-SQL审核查询平台</title>
+    <title>AscendEX-SQL Audit & Query Platform</title>
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- 引入 Bootstrap -->
@@ -38,13 +38,13 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/index/"><strong>Archery</strong></a>
+            <a class="navbar-brand" href="/index/"><strong>AscendEX-SQL</strong></a>
         </div>
 
         <!-- /.navbar-header -->
         <ul class="nav navbar-top-links navbar-right">
             <li>
-                <a>你好，{{ user }}</a>
+                <a>Hi, {{ user }}</a>
             </li>
             {% if todo > 0 %}
                 <li>
@@ -67,24 +67,19 @@
                 <ul class="dropdown-menu dropdown-user">
                     {% if user.is_superuser %}
                         <li>
-                            <a target="_blank" href="/api/debug?full=true"><i class="fa fa-info fa-fw"></i> 系统信息</a>
+                            <a target="_blank" href="/api/debug"><i class="fa fa-info fa-fw"></i> System Info</a>
                         </li>
                         <li>
-                            <a target="_blank" href="/admin"><i class="fa fa-sitemap fa-fw"></i> 管理后台</a>
+                            <a target="_blank" href="/admin"><i class="fa fa-sitemap fa-fw"></i> Backend Admin</a>
                         </li>
                     {% endif %}
-                    <li><a id="2fa-menu" href="javascript:;"><i class="fa fa-lock fa-fw"></i> 两步验证</a></li>
-                    <li><a href="/admin/password_change/"><i class="fa fa-user fa-fw"></i> 修改密码</a></li>
-                    <li><a href="/logout/"><i class="fa fa-gear fa-fw"></i> 退出</a></li>
+                    <li><a id="2fa-menu" href="javascript:;"><i class="fa fa-lock fa-fw"></i> 2MFA</a></li>
+                    <li><a href="/admin/password_change/"><i class="fa fa-user fa-fw"></i> Change Password</a></li>
+                    <li><a href="/logout/"><i class="fa fa-gear fa-fw"></i> Logout</a></li>
                 </ul>
                 <!-- /.dropdown-user -->
             </li>
             <!-- /.dropdown -->
-            <li>
-                <a href="https://github.com/hhyo/Archery" target="_blank">
-                    <i class="fa fa-github fa-lg" aria-hidden="true"></i>
-                </a>
-            </li>
         </ul>
         <!-- /.navbar-top-links -->
 
@@ -98,16 +93,16 @@
                     {% endif %}
                     {% if perms.sql.menu_sqlcheck %}
                         <li>
-                            <a href="#"><i class="fa fa-check fa-fw"></i> SQL审核<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-check fa-fw"></i> SQL WorkFlow<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 {% if perms.sql.menu_sqlworkflow %}
                                     <li>
-                                        <a href="/sqlworkflow/">SQL上线</a>
+                                        <a href="/sqlworkflow/">Submit DML/DDL</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_sqlanalyze %}
                                     <li>
-                                        <a href="/sqlanalyze/">SQL分析</a>
+                                        <a href="/sqlanalyze/">SQL Analyze</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -116,21 +111,21 @@
                     {% endif %}
                     {% if perms.sql.menu_query %}
                         <li>
-                            <a href="#"><i class="fa fa-search fa-fw"></i> SQL查询<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-search fa-fw"></i> SQL Online Query<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 {% if perms.sql.menu_sqlquery %}
                                     <li>
-                                        <a href="/sqlquery/">在线查询</a>
+                                        <a href="/sqlquery/">Online Query</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_data_dictionary %}
                                     <li>
-                                        <a href="/data_dictionary/">数据字典</a>
+                                        <a href="/data_dictionary/">Data Dictionary</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_queryapplylist %}
                                     <li>
-                                        <a href="/queryapplylist/">权限管理</a>
+                                        <a href="/queryapplylist/">Query Permission Management</a>
                                     </li>
                                 {% endif %}
 
@@ -140,16 +135,16 @@
                     {% endif %}
                     {% if perms.sql.menu_sqloptimize %}
                         <li>
-                            <a href="#"><i class="fa fa-wrench fa-fw"></i> SQL优化<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-wrench fa-fw"></i> SQL Advisor & Tuning <span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 {% if perms.sql.menu_sqladvisor %}
                                     <li>
-                                        <a href="/sqladvisor/">优化工具</a>
+                                        <a href="/sqladvisor/">SQL Advisor Tools</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_slowquery %}
                                     <li>
-                                        <a href="/slowquery/">慢查日志</a>
+                                        <a href="/slowquery/">Slow Query</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -158,32 +153,32 @@
                     {% endif %}
                     {% if perms.sql.menu_instance %}
                         <li>
-                            <a href="#"><i class="fa fa-database fa-fw"></i> 实例管理<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-database fa-fw"></i> DB Instance Admin<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 {% if perms.sql.menu_instance_list %}
                                     <li>
-                                        <a href="/instance/">实例列表</a>
+                                        <a href="/instance/">Instance 实例管理</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_dbdiagnostic %}
                                     <li>
-                                        <a href="/dbdiagnostic/">会话管理</a>
+                                        <a href="/dbdiagnostic/">Diagnostic 会话管理</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_database %}
                                     <li>
-                                        <a href="/database/">数据库管理</a>
+                                        <a href="/database/">Database 数据库管理</a>
                                     </li>
                                 {% endif %}
 
                                 {% if perms.sql.menu_instance_account %}
                                     <li>
-                                        <a href="/instanceaccount/">账号管理</a>
+                                        <a href="/instanceaccount/">Account 账号管理</a>
                                     </li>
                                 {% endif %}
                                 {% if perms.sql.menu_param %}
                                     <li>
-                                        <a href="/instanceparam/">参数配置</a>
+                                        <a href="/instanceparam/">Parameter 参数配置</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -192,7 +187,7 @@
                     {% endif %}
                     {% if perms.sql.menu_tools %}
                         <li>
-                            <a href="#"><i class="fa fa-plug fa-fw"></i> 工具插件<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-plug fa-fw"></i> Tools & Plugins<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 {% if perms.sql.menu_archive %}
                                     <li>
@@ -220,25 +215,25 @@
                     {% endif %}
                     {% if perms.sql.menu_system %}
                         <li>
-                            <a href="#"><i class="fa fa-cogs fa-fw"></i> 系统管理<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-cogs fa-fw"></i> System Admin<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a href="/config/">配置项管理</a>
+                                    <a href="/config/">Config Admin</a>
                                 </li>
                                 <li>
-                                    <a href="/group/">资源组管理</a>
+                                    <a href="/group/">Group Admin</a>
                                 </li>
                                 <li>
-                                    <a href="#">其他配置管理 <span class="fa arrow"></span></a>
+                                    <a href="#"> Othes Admin <span class="fa arrow"></span></a>
                                     <ul class="nav nav-third-level collapse">
                                         <li>
-                                            <a target="_blank" href="/admin/sql/users/">用户管理</a>
+                                            <a target="_blank" href="/admin/sql/users/">Login User Admin</a>
                                         </li>
                                         <li>
-                                            <a target="_blank" href="/admin/auth/group/">权限组管理</a>
+                                            <a target="_blank" href="/admin/auth/group/">Auth Group Admin</a>
                                         </li>
                                         <li>
-                                            <a target="_blank" href="/admin/">全部后台数据</a>
+                                            <a target="_blank" href="/admin/">All Admin</a>
                                         </li>
                                     </ul>
                                     <!-- /.nav-third-level -->
@@ -346,7 +341,7 @@
             <!--底部部分 -->
             <footer class="text-center">
                 <hr>
-                <p><strong>&copy; Archery</strong>&nbsp;(v{{ archery_version }})</p>
+                <p><strong>&copy; AscendEX-SQL</strong>&nbsp;(v{{ archery_version }})</p>
             </footer>
         </div>
     </div>

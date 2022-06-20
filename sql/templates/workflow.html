@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h4 style="display: inline;">待办列表<span>{{ workflow_detail.workflow_name }}</span></h4>
+    <h4 style="display: inline;">Approval Todo List<span>{{ workflow_detail.workflow_name }}</span></h4>
     &nbsp;&nbsp;&nbsp;
     <hr>
     <!-- 自定义操作按钮-->
     <div id="toolbar" class="bootstrap-select">
         <select id="workflow_type" class="form-control dropdown-menu-right selectpicker ">
-            <option value="0" selected="selected">全部</option>
-            <option value="1">查询权限申请</option>
-            <option value="2">SQL上线申请</option>
-            <option value="3">数据归档申请</option>
+            <option value="0" selected="selected">All</option>
+            <option value="1">Query Privileges Approval</option>
+            <option value="2">SQL Launch Approval</option>
+            <option value="3">Archive SQLData Approval</option>
         </select>
     </div>
     <!-- 审核列表的表格-->
@@ -26,18 +26,18 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
                             aria-hidden="true">×</span></button>
-                    <h4 class="modal-title text-danger">审核确认</h4>
+                    <h4 class="modal-title text-danger">Audit Confirm</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
                         <input type="hidden" id="audit_id">
-                        <textarea id="audit_remark" class="form-control" placeholder="请输入审核备注" rows=4
+                        <textarea id="audit_remark" class="form-control" placeholder=" Please input review comments" rows=4
                                   required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="reject" onclick="audit(0)" class="btn btn-danger">拒绝</button>
-                    <button type="button" id="pass" onclick="audit(1)" class="btn btn-success">审核通过</button>
+                    <button type="button" id="reject" onclick="audit(0)" class="btn btn-danger">Audit Reject</button>
+                    <button type="button" id="pass" onclick="audit(1)" class="btn btn-success">Audit Pass</button>
                 </div>
             </div>
         </div>
@@ -88,46 +88,48 @@
                         }
                     },
                 columns: [{
-                    title: '申请标题',
+                    title: 'Title',
                     field: 'workflow_title',
                     formatter: function (value, row, index) {
                         return "<a href='/workflow/" + row.audit_id + "/'>" + value + "</a>";
                     }
                 }, {
-                    title: '组',
+                    title: 'Resource Group',
                     field: 'group_name'
                 }, {
-                    title: '申请类型',
+                    title: 'Type',
                     field: 'workflow_type',
                     formatter: function (value, row, index) {
                         return workflow_type_formatter(value)
                     }
                 }, {
-                    title: '申请人',
+                    title: 'User',
                     field: 'create_user_display'
                 }, {
-                    title: '申请时间',
+                    title: 'Create Time',
                     field: 'create_time'
                 }, {
-                    title: '审核状态',
+                    title: 'Status',
                     field: 'current_status',
                     formatter: function (value, row, index) {
                         return workflow_status_formatter(value)
                     }
                 }, {
-                    title: '操作',
+                    title: 'Operation',
                     field: 'id',
                     formatter: function (value, row, index) {
                         // 当前审核人
                         return "<button class=\"btn btn-default btn-xs\" " +
                             "onclick=\"javascrtpt:window.location.href='/workflow/" + row.audit_id + "/'\">" +
-                            "审核</button>\n"
+                            "Approve</button>\n"
 
                     }
                 }],
                 onLoadSuccess: function () {
                 },
-                onLoadError: onLoadErrorCallback,
+                onLoadError: function () {
+                    alert("数据加载失败！请检查接口返回信息和错误日志！");
+                },
                 onSearch: function (e) {
                     //传搜索参数给服务器
                     queryParams(e)
